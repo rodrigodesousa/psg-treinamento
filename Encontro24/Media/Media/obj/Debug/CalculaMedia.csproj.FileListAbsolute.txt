@@ -1,0 +1,7 @@
+C:\Users\PSG\source\repos\Media\Media\obj\Debug\CalculaMedia.csprojAssemblyReference.cache
+C:\Users\PSG\source\repos\Media\Media\obj\Debug\CalculaMedia.csproj.CoreCompileInputs.cache
+C:\Users\PSG\source\repos\Media\Media\bin\Debug\Media.exe.config
+C:\Users\PSG\source\repos\Media\Media\bin\Debug\Media.exe
+C:\Users\PSG\source\repos\Media\Media\bin\Debug\Media.pdb
+C:\Users\PSG\source\repos\Media\Media\obj\Debug\Media.exe
+C:\Users\PSG\source\repos\Media\Media\obj\Debug\Media.pdb
