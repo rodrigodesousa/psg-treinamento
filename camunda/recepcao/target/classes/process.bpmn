@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1awkk6j" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="4.9.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.15.0">
+  <bpmn:collaboration id="Collaboration_0v5m07k">
+    <bpmn:participant id="Bloco-Renovacao-CFC" name="Bloco Renovacao CFC" processRef="Renovacao-CFC" />
+  </bpmn:collaboration>
+  <bpmn:process id="Renovacao-CFC" name="Processo de Renovação CFC" isExecutable="true" camunda:versionTag="1.0">
+    <bpmn:laneSet id="LaneSet_16ql4ka">
+      <bpmn:lane id="Lane_0tfcdi1" name="PROJU">
+        <bpmn:flowNodeRef>analisa_documentos</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_0v865gz" name="Presidencia">
+        <bpmn:flowNodeRef>assinar_documentos</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_0g2w99b" name="Diretoria">
+        <bpmn:flowNodeRef>secretaria_diretoria</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>diretor_responsavel</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_0d94oan" name="Recepção">
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0cfq71e</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>recepcao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>devolucao</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent_1" camunda:formKey="embedded:app:forms/start-form.html" camunda:initiator="inicializador">
+      <bpmn:outgoing>Flow_1dlzt28</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:endEvent id="Event_0cfq71e">
+      <bpmn:incoming>Flow_1b29vtf</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:userTask id="recepcao" name="Recepção" camunda:formKey="embedded:app:forms/recepcao.html" camunda:assignee="${inicializador}" camunda:candidateGroups="recepcao">
+      <bpmn:extensionElements>
+        <camunda:executionListener class="br.com.psg.treinamento.Recepcao" event="start" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1dlzt28</bpmn:incoming>
+      <bpmn:outgoing>Flow_1cino6s</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="secretaria_diretoria" name="Secretaria Diretoria" camunda:formKey="embedded:app:forms/secretaria.html" camunda:candidateGroups="diretoria">
+      <bpmn:incoming>Flow_1cino6s</bpmn:incoming>
+      <bpmn:incoming>Flow_02o4zjj</bpmn:incoming>
+      <bpmn:outgoing>Flow_06nyqqx</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1qxyiaw</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="analisa_documentos" name="Analisar Documentos" camunda:candidateGroups="proju">
+      <bpmn:incoming>Flow_06nyqqx</bpmn:incoming>
+      <bpmn:outgoing>Flow_02o4zjj</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="diretor_responsavel" name="Diretor Responsavel" camunda:candidateGroups="diretoria">
+      <bpmn:incoming>Flow_1qxyiaw</bpmn:incoming>
+      <bpmn:outgoing>Flow_10hwsd9</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="assinar_documentos" name="Assinar Documentos" camunda:candidateGroups="presidencia">
+      <bpmn:incoming>Flow_10hwsd9</bpmn:incoming>
+      <bpmn:outgoing>Flow_1elf2qs</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="devolucao" name="Devolução" camunda:candidateGroups="recepcao">
+      <bpmn:incoming>Flow_1elf2qs</bpmn:incoming>
+      <bpmn:outgoing>Flow_1b29vtf</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_1dlzt28" sourceRef="StartEvent_1" targetRef="recepcao" />
+    <bpmn:sequenceFlow id="Flow_1cino6s" sourceRef="recepcao" targetRef="secretaria_diretoria" />
+    <bpmn:sequenceFlow id="Flow_06nyqqx" sourceRef="secretaria_diretoria" targetRef="analisa_documentos">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${seguirDiretoria == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1qxyiaw" sourceRef="secretaria_diretoria" targetRef="diretor_responsavel">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${seguirDiretoria == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_02o4zjj" sourceRef="analisa_documentos" targetRef="secretaria_diretoria" />
+    <bpmn:sequenceFlow id="Flow_10hwsd9" sourceRef="diretor_responsavel" targetRef="assinar_documentos" />
+    <bpmn:sequenceFlow id="Flow_1elf2qs" sourceRef="assinar_documentos" targetRef="devolucao" />
+    <bpmn:sequenceFlow id="Flow_1b29vtf" sourceRef="devolucao" targetRef="Event_0cfq71e" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_0v5m07k">
+      <bpmndi:BPMNShape id="Participant_17ezi2a_di" bpmnElement="Bloco-Renovacao-CFC" isHorizontal="true">
+        <dc:Bounds x="155" y="85" width="1020" height="740" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_0d94oan_di" bpmnElement="Lane_0d94oan" isHorizontal="true">
+        <dc:Bounds x="185" y="85" width="990" height="190" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_0g2w99b_di" bpmnElement="Lane_0g2w99b" isHorizontal="true">
+        <dc:Bounds x="185" y="275" width="990" height="210" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_0v865gz_di" bpmnElement="Lane_0v865gz" isHorizontal="true">
+        <dc:Bounds x="185" y="655" width="990" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_0tfcdi1_di" bpmnElement="Lane_0tfcdi1" isHorizontal="true">
+        <dc:Bounds x="185" y="485" width="990" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1b29vtf_di" bpmnElement="Flow_1b29vtf">
+        <di:waypoint x="925" y="185" />
+        <di:waypoint x="1027" y="185" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1elf2qs_di" bpmnElement="Flow_1elf2qs">
+        <di:waypoint x="705" y="735" />
+        <di:waypoint x="875" y="735" />
+        <di:waypoint x="875" y="225" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10hwsd9_di" bpmnElement="Flow_10hwsd9">
+        <di:waypoint x="655" y="425" />
+        <di:waypoint x="655" y="695" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_02o4zjj_di" bpmnElement="Flow_02o4zjj">
+        <di:waypoint x="415" y="525" />
+        <di:waypoint x="415" y="425" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1qxyiaw_di" bpmnElement="Flow_1qxyiaw">
+        <di:waypoint x="445" y="385" />
+        <di:waypoint x="605" y="385" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_06nyqqx_di" bpmnElement="Flow_06nyqqx">
+        <di:waypoint x="375" y="425" />
+        <di:waypoint x="375" y="525" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1cino6s_di" bpmnElement="Flow_1cino6s">
+        <di:waypoint x="395" y="245" />
+        <di:waypoint x="395" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1dlzt28_di" bpmnElement="Flow_1dlzt28">
+        <di:waypoint x="293" y="205" />
+        <di:waypoint x="345" y="205" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1" bioc:stroke="#43a047" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#43a047">
+        <dc:Bounds x="257" y="187" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0cfq71e_di" bpmnElement="Event_0cfq71e" bioc:stroke="#43a047" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#43a047">
+        <dc:Bounds x="1027" y="167" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_12moj9c_di" bpmnElement="recepcao">
+        <dc:Bounds x="345" y="165" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1kb2alx_di" bpmnElement="secretaria_diretoria">
+        <dc:Bounds x="345" y="345" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0kwusch_di" bpmnElement="analisa_documentos">
+        <dc:Bounds x="345" y="525" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0syp9qe_di" bpmnElement="diretor_responsavel">
+        <dc:Bounds x="605" y="345" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_16027m5_di" bpmnElement="assinar_documentos">
+        <dc:Bounds x="605" y="695" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0uh0quo_di" bpmnElement="devolucao">
+        <dc:Bounds x="825" y="145" width="100" height="80" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
