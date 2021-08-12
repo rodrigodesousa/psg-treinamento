@@ -41,19 +41,19 @@
       <bpmn:outgoing>Flow_06nyqqx</bpmn:outgoing>
       <bpmn:outgoing>Flow_1qxyiaw</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:userTask id="analisa_documentos" name="Analisar Documentos" camunda:candidateGroups="proju">
+    <bpmn:userTask id="analisa_documentos" name="Analisar Documentos" camunda:formKey="embedded:app:forms/proju.html" camunda:candidateGroups="proju">
       <bpmn:incoming>Flow_06nyqqx</bpmn:incoming>
       <bpmn:outgoing>Flow_02o4zjj</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:userTask id="diretor_responsavel" name="Diretor Responsavel" camunda:candidateGroups="diretoria">
+    <bpmn:userTask id="diretor_responsavel" name="Diretor Responsavel" camunda:formKey="embedded:app:forms/diretoria.html" camunda:candidateGroups="diretoria">
       <bpmn:incoming>Flow_1qxyiaw</bpmn:incoming>
       <bpmn:outgoing>Flow_10hwsd9</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:userTask id="assinar_documentos" name="Assinar Documentos" camunda:candidateGroups="presidencia">
+    <bpmn:userTask id="assinar_documentos" name="Assinar Documentos" camunda:formKey="embedded:app:forms/presidencia.html" camunda:candidateGroups="presidencia">
       <bpmn:incoming>Flow_10hwsd9</bpmn:incoming>
       <bpmn:outgoing>Flow_1elf2qs</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:userTask id="devolucao" name="Devolução" camunda:candidateGroups="recepcao">
+    <bpmn:userTask id="devolucao" name="Devolução" camunda:formKey="embedded:app:forms/devolucao.html" camunda:candidateGroups="recepcao">
       <bpmn:incoming>Flow_1elf2qs</bpmn:incoming>
       <bpmn:outgoing>Flow_1b29vtf</bpmn:outgoing>
     </bpmn:userTask>

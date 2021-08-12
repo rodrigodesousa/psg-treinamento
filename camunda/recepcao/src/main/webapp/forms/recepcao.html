@@ -39,11 +39,10 @@ embedded:app:forms/start-form.html
           disabled
           name="setor"
           id="setor"
-          cam-variable-name="setor"
-          cam-variable-type="String"
+          data-ng-model="setorVar"
       >
         <option>Tesouraria</option>
-        <option >RH</option>
+        <option>RH</option>
         <option>Comercial</option>
         <option>Vendas</option>
         <option>Solicitação Diversos</option>
@@ -63,6 +62,15 @@ embedded:app:forms/start-form.html
   </div>
 
   <script cam-script type="text/form-script">
-  // custom JavaScript goes here
+    var variableManager = camForm.variableManager;
+
+    camForm.on('form-loaded', function(){
+      variableManager.fetchVariable('setor');
+    });
+    
+    camForm.on('variables-fetched', function(){
+      $scope.setorVar = variableManager.variableValue('setor');
+      console.log("variavel ", $scope.setorVar)
+    });
   </script>
 </form>
