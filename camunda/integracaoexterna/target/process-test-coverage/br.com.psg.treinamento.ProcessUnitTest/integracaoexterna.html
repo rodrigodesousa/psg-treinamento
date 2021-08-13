@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+  <meta http-equiv="cache-control" content="max-age=0" />
+  <meta http-equiv="cache-control" content="no-cache" />
+  <meta http-equiv="expires" content="0" />
+  <meta http-equiv="pragma" content="no-cache" />
+
+  <style type="text/css">
+    html, body, #canvas {
+      height: 100%;
+      padding: 0;
+    }
+    
+    .transaction-boundary {
+      background-color: rgba(180, 21, 21, 0.7);
+      border-radius: 1px;
+      min-height: 50px;
+      width: 3px;
+    }
+
+    .execution-listener {
+      background-color: rgba(21, 66, 180, 0.7);
+      color: White;
+      border-radius: 5px;
+      font-family: Arial;
+      font-size: 12px;
+      padding: 5px;
+      min-height: 16px;
+      min-width: 16px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .highlight:not(.djs-connection) .djs-visual > :nth-child(1) {
+      fill: rgba(66, 180, 21, 0.7) !important; /* color elements as green */
+    }
+    
+    .highlight-running .djs-visual > :nth-child(1) {
+    	fill: rgba(0, 198, 218, 0.7) !important; /* color still running flow nodes as blue */
+    }
+    
+    #info-box {
+   	  margin-left: 20px;
+      margin-top: 15px;
+      padding: 10px;
+      table-layout: fixed;
+      border-collapse: collapse;
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      font-family: sans-serif;
+      line-height: 150%;
+      font-size: 80%;
+      z-index: 1000;
+      background-color: rgba(255,255,255,0.90);
+      border-radius: 10px;
+    }
+  </style>
+
+  <title>Process Test Coverage Report</title>
+</head>
+<body>
+
+  <div id="info-box">
+	<div>Process Definition Name: integracaoexterna</div>
+	<div>Coverage: 0%</div>
+	<div>Test Class: br.com.psg.treinamento.ProcessUnitTest</div>
+	
+  </div>
+  
+  <!-- element to draw bpmn diagram in -->
+  <div id="canvas"></div>
+
+  <!-- scripts -->
+
+  <!-- seed dependencies (required for demo only) -->
+  <script src="../bower_components/jquery/dist/jquery.js"></script>
+
+  <!-- bpmn-js viewer -->
+  <script src="../bower_components/bpmn-js/dist/bpmn-navigated-viewer.js"></script>
+
+  <!-- application -->
+  <script>
+    (function(NavigatedViewer, $) {
+
+      // create viewer
+      var bpmnViewer = new NavigatedViewer({
+        container: '#canvas'
+      });
+
+
+      // import function
+      function importXML(xml) {
+
+        // import diagram
+        bpmnViewer.importXML(xml, function(err) {
+
+          if (err) {
+            return console.error('could not import BPMN 2.0 diagram', err);
+          }
+
+          var canvas = bpmnViewer.get('canvas'),
+              overlays = bpmnViewer.get('overlays');
+
+
+          // zoom to fit full viewport
+          canvas.zoom('fit-viewport', true);
+
+      // visualizations          
+      elementRegistry = bpmnViewer.get('elementRegistry');
+      var elements = elementRegistry.getAll();
+      console.log(elements);
+      for (var i = 0; i < elements.length; i++) {
+        var element = elements[i];
+        if (element.type != 'label') {
+          
+          // Transaction Boundaries
+          if (element.businessObject.$attrs["camunda:asyncBefore"]
+                || element.businessObject.$attrs["camunda:async"]
+                || element.type == 'bpmn:ReceiveTask'
+                || element.type == 'bpmn:UserTask'
+                || element.type == 'bpmn:IntermediateCatchEvent'
+             ) {
+            overlays.add(element.id, 'note', {
+              position: {
+                bottom: (element.type == 'bpmn:IntermediateCatchEvent' ? 18 : 40),
+                left: -4
+              },
+              html: '<div class="transaction-boundary"></div>'
+            });
+          }
+          if (element.businessObject.$attrs["camunda:asyncAfter"]) {
+            overlays.add(element.id, 'note', {
+              position: {
+                bottom: 19,
+                right: -1
+              },
+              html: '<div class="transaction-boundary"></div>'
+            });
+          }
+          
+          if (element.businessObject.extensionElements) {
+            var extensionElements = element.businessObject.extensionElements.values;
+            for (var j = 0; j < extensionElements.length; j++) {
+              console.log(extensionElements[j]);
+              if (extensionElements[j].$type == 'camunda:executionListener') {
+                if (extensionElements[j].event == 'end') {
+                  overlays.add(element.id, 'note', {
+                    position: {
+                      bottom: 0,
+                      right: 0
+                    },
+                    html: '<div class="execution-listener">' + extensionElements[j].expression + '</div>'
+                  });
+                }
+                if (extensionElements[j].event == 'start') {
+                  overlays.add(element.id, 'note', {
+                    position: {
+                      bottom: 0,
+                      left: 0
+                    },
+                    html: '<div class="execution-listener">' + extensionElements[j].expression + '</div>'
+                  });
+                }
+              }
+            }
+          }
+ 
+ 		  if (element.type == 'bpmn:SequenceFlow' && element.businessObject.conditionExpression) {
+ 		      var position = {
+                      left: 0
+                    }
+              if (element.waypoints[0].y > element.waypoints[element.waypoints.length - 1].y) {
+              	position.top = -29;
+              } else {
+                position.bottom = -3;
+              }    
+          	  overlays.add(element.id, 'note', {
+                    position: position,
+                    html: '<div class="execution-listener">' + element.businessObject.conditionExpression.body + '</div>'
+                  }); 
+		  }
+          
+          if (element.businessObject.$attrs["camunda:delegateExpression"]) {
+            overlays.add(element.id, 'note', {
+              position: {
+                bottom: -3,
+                left: 0
+              },
+              html: '<div class="execution-listener">' + element.businessObject.$attrs["camunda:delegateExpression"] + '</div>'
+            });
+          }
+          
+        }
+      }          
+          //YOUR ANNOTATIONS GO HERE
+
+        });
+      }
+
+
+      var diagramXML = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn:definitions xmlns:bpmn=\"http:\/\/www.omg.org\/spec\/BPMN\/20100524\/MODEL\" xmlns:bpmndi=\"http:\/\/www.omg.org\/spec\/BPMN\/20100524\/DI\" xmlns:di=\"http:\/\/www.omg.org\/spec\/DD\/20100524\/DI\" xmlns:dc=\"http:\/\/www.omg.org\/spec\/DD\/20100524\/DC\" xmlns:xsi=\"http:\/\/www.w3.org\/2001\/XMLSchema-instance\" xmlns:camunda=\"http:\/\/camunda.org\/schema\/1.0\/bpmn\" id=\"Definitions_1\" targetNamespace=\"http:\/\/bpmn.io\/schema\/bpmn\" exporter=\"Camunda Modeler\" exporterVersion=\"4.9.0\">\n  <bpmn:process id=\"integracaoexterna\" name=\"integracaoexterna\" isExecutable=\"true\" camunda:versionTag=\"1.0\">\n    <bpmn:startEvent id=\"StartEventProcessStarted\" name=\"buscar CPF\" camunda:formKey=\"embedded:app:forms\/start-form.html\">\n      <bpmn:outgoing>Flow_1a6o3dz<\/bpmn:outgoing>\n    <\/bpmn:startEvent>\n    <bpmn:sequenceFlow id=\"Flow_1a6o3dz\" sourceRef=\"StartEventProcessStarted\" targetRef=\"Activity_15as5rv\" \/>\n    <bpmn:sequenceFlow id=\"Flow_0kvzp0i\" sourceRef=\"Activity_15as5rv\" targetRef=\"Activity_00r7fdn\" \/>\n    <bpmn:sequenceFlow id=\"Flow_0c1lhwu\" sourceRef=\"Activity_00r7fdn\" targetRef=\"Activity_1oq1z96\" \/>\n    <bpmn:sequenceFlow id=\"Flow_0waq96c\" sourceRef=\"Activity_1oq1z96\" targetRef=\"Activity_09fdxnx\" \/>\n    <bpmn:sequenceFlow id=\"Flow_1egnavr\" sourceRef=\"Activity_09fdxnx\" targetRef=\"Activity_09lvyt5\" \/>\n    <bpmn:sequenceFlow id=\"Flow_1fkqh9p\" sourceRef=\"Activity_09lvyt5\" targetRef=\"Activity_1k1z4sn\" \/>\n    <bpmn:serviceTask id=\"Activity_15as5rv\" name=\"Dados CPF\" camunda:type=\"external\" camunda:topic=\"buscar-dados-cpf\">\n      <bpmn:incoming>Flow_1a6o3dz<\/bpmn:incoming>\n      <bpmn:outgoing>Flow_0kvzp0i<\/bpmn:outgoing>\n    <\/bpmn:serviceTask>\n    <bpmn:serviceTask id=\"Activity_00r7fdn\" name=\"Dados CEP\" camunda:type=\"external\" camunda:topic=\"buscar-dados-cep\">\n      <bpmn:incoming>Flow_0kvzp0i<\/bpmn:incoming>\n      <bpmn:outgoing>Flow_0c1lhwu<\/bpmn:outgoing>\n    <\/bpmn:serviceTask>\n    <bpmn:userTask id=\"Activity_1oq1z96\" name=\"Validar CNPJ\" camunda:formKey=\"embedded:app:forms\/cnpj.html\">\n      <bpmn:incoming>Flow_0c1lhwu<\/bpmn:incoming>\n      <bpmn:outgoing>Flow_0waq96c<\/bpmn:outgoing>\n    <\/bpmn:userTask>\n    <bpmn:serviceTask id=\"Activity_09fdxnx\" name=\"Validar Regras\" camunda:class=\"br.com.psg.treinamento.Etapa\">\n      <bpmn:incoming>Flow_0waq96c<\/bpmn:incoming>\n      <bpmn:outgoing>Flow_1egnavr<\/bpmn:outgoing>\n    <\/bpmn:serviceTask>\n    <bpmn:serviceTask id=\"Activity_1k1z4sn\" name=\"Avaliar Viabilidade\" camunda:class=\"br.com.psg.treinamento.Etapa\">\n      <bpmn:incoming>Flow_1fkqh9p<\/bpmn:incoming>\n      <bpmn:outgoing>Flow_02cmpxs<\/bpmn:outgoing>\n    <\/bpmn:serviceTask>\n    <bpmn:userTask id=\"Activity_09lvyt5\" name=\"Completar Cadastro\">\n      <bpmn:incoming>Flow_1egnavr<\/bpmn:incoming>\n      <bpmn:outgoing>Flow_1fkqh9p<\/bpmn:outgoing>\n    <\/bpmn:userTask>\n    <bpmn:endEvent id=\"Event_1bx7awq\">\n      <bpmn:incoming>Flow_0iodgef<\/bpmn:incoming>\n    <\/bpmn:endEvent>\n    <bpmn:sequenceFlow id=\"Flow_02cmpxs\" sourceRef=\"Activity_1k1z4sn\" targetRef=\"Activity_1dbzrs1\" \/>\n    <bpmn:sequenceFlow id=\"Flow_0iodgef\" sourceRef=\"Activity_1dbzrs1\" targetRef=\"Event_1bx7awq\" \/>\n    <bpmn:userTask id=\"Activity_1dbzrs1\" name=\"Laudo T\u00C3\u00A9cnico\">\n      <bpmn:incoming>Flow_02cmpxs<\/bpmn:incoming>\n      <bpmn:outgoing>Flow_0iodgef<\/bpmn:outgoing>\n    <\/bpmn:userTask>\n    <bpmn:startEvent id=\"Event_0tpb60e\">\n      <bpmn:outgoing>Flow_06r2r6f<\/bpmn:outgoing>\n      <bpmn:messageEventDefinition id=\"MessageEventDefinition_0mdi8uf\" messageRef=\"Message_08lmtsa\" \/>\n    <\/bpmn:startEvent>\n    <bpmn:sequenceFlow id=\"Flow_06r2r6f\" sourceRef=\"Event_0tpb60e\" targetRef=\"Activity_01mhepj\" \/>\n    <bpmn:sequenceFlow id=\"Flow_1gjr8pc\" sourceRef=\"Activity_01mhepj\" targetRef=\"Activity_1iabd2q\" \/>\n    <bpmn:sequenceFlow id=\"Flow_102ga38\" sourceRef=\"Activity_1iabd2q\" targetRef=\"Event_0za81hm\" \/>\n    <bpmn:intermediateCatchEvent id=\"Event_0za81hm\" name=\"Aguardar 1 minuto\">\n      <bpmn:incoming>Flow_102ga38<\/bpmn:incoming>\n      <bpmn:outgoing>Flow_0lrloft<\/bpmn:outgoing>\n      <bpmn:timerEventDefinition id=\"TimerEventDefinition_10jkk2f\">\n        <bpmn:timeDuration xsi:type=\"bpmn:tFormalExpression\">PT1M<\/bpmn:timeDuration>\n      <\/bpmn:timerEventDefinition>\n    <\/bpmn:intermediateCatchEvent>\n    <bpmn:sequenceFlow id=\"Flow_0lrloft\" sourceRef=\"Event_0za81hm\" targetRef=\"Activity_14omhg5\" \/>\n    <bpmn:serviceTask id=\"Activity_14omhg5\" name=\"Enviar Para infra\" camunda:class=\"br.com.psg.treinamento.Etapa\">\n      <bpmn:incoming>Flow_0lrloft<\/bpmn:incoming>\n      <bpmn:outgoing>Flow_1h673zr<\/bpmn:outgoing>\n    <\/bpmn:serviceTask>\n    <bpmn:endEvent id=\"Event_0k8cihj\">\n      <bpmn:incoming>Flow_1h673zr<\/bpmn:incoming>\n    <\/bpmn:endEvent>\n    <bpmn:sequenceFlow id=\"Flow_1h673zr\" sourceRef=\"Activity_14omhg5\" targetRef=\"Event_0k8cihj\" \/>\n    <bpmn:manualTask id=\"Activity_1iabd2q\" name=\"Controle de Fluxo\">\n      <bpmn:incoming>Flow_1gjr8pc<\/bpmn:incoming>\n      <bpmn:outgoing>Flow_102ga38<\/bpmn:outgoing>\n    <\/bpmn:manualTask>\n    <bpmn:serviceTask id=\"Activity_01mhepj\" name=\"Busca resposta da Empresa\" camunda:class=\"br.com.psg.treinamento.Etapa\">\n      <bpmn:incoming>Flow_06r2r6f<\/bpmn:incoming>\n      <bpmn:outgoing>Flow_1gjr8pc<\/bpmn:outgoing>\n    <\/bpmn:serviceTask>\n  <\/bpmn:process>\n  <bpmn:message id=\"Message_08lmtsa\" name=\"msg_viabilidade\" \/>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_1\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"integracaoexterna\">\n      <bpmndi:BPMNEdge id=\"Flow_1a6o3dz_di\" bpmnElement=\"Flow_1a6o3dz\">\n        <di:waypoint x=\"209\" y=\"120\" \/>\n        <di:waypoint x=\"260\" y=\"120\" \/>\n      <\/bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0kvzp0i_di\" bpmnElement=\"Flow_0kvzp0i\">\n        <di:waypoint x=\"360\" y=\"120\" \/>\n        <di:waypoint x=\"420\" y=\"120\" \/>\n      <\/bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0c1lhwu_di\" bpmnElement=\"Flow_0c1lhwu\">\n        <di:waypoint x=\"520\" y=\"120\" \/>\n        <di:waypoint x=\"580\" y=\"120\" \/>\n      <\/bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0waq96c_di\" bpmnElement=\"Flow_0waq96c\">\n        <di:waypoint x=\"680\" y=\"120\" \/>\n        <di:waypoint x=\"740\" y=\"120\" \/>\n      <\/bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1egnavr_di\" bpmnElement=\"Flow_1egnavr\">\n        <di:waypoint x=\"790\" y=\"160\" \/>\n        <di:waypoint x=\"790\" y=\"280\" \/>\n        <di:waypoint x=\"730\" y=\"280\" \/>\n      <\/bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1fkqh9p_di\" bpmnElement=\"Flow_1fkqh9p\">\n        <di:waypoint x=\"630\" y=\"280\" \/>\n        <di:waypoint x=\"559\" y=\"280\" \/>\n      <\/bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_02cmpxs_di\" bpmnElement=\"Flow_02cmpxs\">\n        <di:waypoint x=\"459\" y=\"280\" \/>\n        <di:waypoint x=\"376\" y=\"280\" \/>\n      <\/bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0iodgef_di\" bpmnElement=\"Flow_0iodgef\">\n        <di:waypoint x=\"276\" y=\"280\" \/>\n        <di:waypoint x=\"209\" y=\"280\" \/>\n      <\/bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_06r2r6f_di\" bpmnElement=\"Flow_06r2r6f\">\n        <di:waypoint x=\"209\" y=\"400\" \/>\n        <di:waypoint x=\"260\" y=\"400\" \/>\n      <\/bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1gjr8pc_di\" bpmnElement=\"Flow_1gjr8pc\">\n        <di:waypoint x=\"360\" y=\"400\" \/>\n        <di:waypoint x=\"420\" y=\"400\" \/>\n      <\/bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_102ga38_di\" bpmnElement=\"Flow_102ga38\">\n        <di:waypoint x=\"520\" y=\"400\" \/>\n        <di:waypoint x=\"582\" y=\"400\" \/>\n      <\/bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0lrloft_di\" bpmnElement=\"Flow_0lrloft\">\n        <di:waypoint x=\"618\" y=\"400\" \/>\n        <di:waypoint x=\"680\" y=\"400\" \/>\n      <\/bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1h673zr_di\" bpmnElement=\"Flow_1h673zr\">\n        <di:waypoint x=\"780\" y=\"400\" \/>\n        <di:waypoint x=\"842\" y=\"400\" \/>\n      <\/bpmndi:BPMNEdge>\n      <bpmndi:BPMNShape id=\"_BPMNShape_StartEvent_2\" bpmnElement=\"StartEventProcessStarted\">\n        <dc:Bounds x=\"173\" y=\"102\" width=\"36\" height=\"36\" \/>\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"162\" y=\"138\" width=\"59\" height=\"14\" \/>\n        <\/bpmndi:BPMNLabel>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_1asonyx_di\" bpmnElement=\"Activity_15as5rv\">\n        <dc:Bounds x=\"260\" y=\"80\" width=\"100\" height=\"80\" \/>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_05o9y62_di\" bpmnElement=\"Activity_00r7fdn\">\n        <dc:Bounds x=\"420\" y=\"80\" width=\"100\" height=\"80\" \/>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_0pqwxv2_di\" bpmnElement=\"Activity_1oq1z96\">\n        <dc:Bounds x=\"580\" y=\"80\" width=\"100\" height=\"80\" \/>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_0y83hov_di\" bpmnElement=\"Activity_09fdxnx\">\n        <dc:Bounds x=\"740\" y=\"80\" width=\"100\" height=\"80\" \/>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_1gnqupn_di\" bpmnElement=\"Activity_09lvyt5\">\n        <dc:Bounds x=\"630\" y=\"240\" width=\"100\" height=\"80\" \/>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Event_1bx7awq_di\" bpmnElement=\"Event_1bx7awq\">\n        <dc:Bounds x=\"173\" y=\"262\" width=\"36\" height=\"36\" \/>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_00svu0j_di\" bpmnElement=\"Activity_1dbzrs1\">\n        <dc:Bounds x=\"276\" y=\"240\" width=\"100\" height=\"80\" \/>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Event_0nrfsb5_di\" bpmnElement=\"Event_0tpb60e\">\n        <dc:Bounds x=\"173\" y=\"382\" width=\"36\" height=\"36\" \/>\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"152\" y=\"425\" width=\"79\" height=\"14\" \/>\n        <\/bpmndi:BPMNLabel>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Event_19oyy3p_di\" bpmnElement=\"Event_0za81hm\">\n        <dc:Bounds x=\"582\" y=\"382\" width=\"36\" height=\"36\" \/>\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"555\" y=\"425\" width=\"90\" height=\"14\" \/>\n        <\/bpmndi:BPMNLabel>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_0hakvot_di\" bpmnElement=\"Activity_14omhg5\">\n        <dc:Bounds x=\"680\" y=\"360\" width=\"100\" height=\"80\" \/>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Event_0k8cihj_di\" bpmnElement=\"Event_0k8cihj\">\n        <dc:Bounds x=\"842\" y=\"382\" width=\"36\" height=\"36\" \/>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_1ugkxe4_di\" bpmnElement=\"Activity_1iabd2q\">\n        <dc:Bounds x=\"420\" y=\"360\" width=\"100\" height=\"80\" \/>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_1hbewfh_di\" bpmnElement=\"Activity_01mhepj\">\n        <dc:Bounds x=\"260\" y=\"360\" width=\"100\" height=\"80\" \/>\n      <\/bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_19ib3di_di\" bpmnElement=\"Activity_1k1z4sn\">\n        <dc:Bounds x=\"459\" y=\"240\" width=\"100\" height=\"80\" \/>\n      <\/bpmndi:BPMNShape>\n    <\/bpmndi:BPMNPlane>\n  <\/bpmndi:BPMNDiagram>\n<\/bpmn:definitions>\n';
+      importXML(diagramXML);
+
+    })(window.BpmnJS, window.jQuery);
+  </script>
+</body>
+</html>
